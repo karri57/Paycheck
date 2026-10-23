@@ -1,0 +1,54 @@
+workflows:
+  ios-release:
+    name: ClearPath iOS
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: ClearPath App Store Connect
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.karrionfuler.clearpathMoney
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - clearpath_production
+    scripts:
+      - name: Install dependencies
+        script: flutter pub get
+      - name: Analyze
+        script: flutter analyze
+      - name: Test
+        script: flutter test
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Build iOS archive
+        script: flutter build ipa --release --export-options-plist=$HOME/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        expire_build_submitted_for_review: false
+
+  ios-simulator:
+    name: ClearPath iOS Simulator
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      flutter: stable
+      xcode: latest
+    scripts:
+      - name: Install dependencies
+        script: flutter pub get
+      - name: Verify
+        script: |-
+          flutter analyze
+          flutter test
+      - name: Build simulator app
+        script: flutter build ios --simulator
+    artifacts:
+      - build/ios/iphonesimulator/*.app
